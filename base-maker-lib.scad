@@ -316,103 +316,104 @@ module MagnetStudMarker()
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //Code
 
-
-rotate([0,180,90])
-//Remove MagnetHoles
-difference()
-    {
-    //Add MagnetStuds and Cross Bracing
-    union()
+// Wrapping this in a module so I can use it elsewhere
+module create_base() {
+    rotate([0,180,90])
+    //Remove MagnetHoles
+    difference()
         {
-        //Carve Out Underside
-        difference()
+        //Add MagnetStuds and Cross Bracing
+        union()
             {
-            //Combine FlatTop and TaperedBottom
-            hull()
+            //Carve Out Underside
+            difference()
                 {
-                //FlatTop
-                translate([0,0,0])scale([OvalXScale,1,1]) cylinder(h=AdjustedBaseFlatHeight, d=LengthDiameter, $fn=CircleEdgeFaces);
-                //TaperedBottom
-                translate([0,0,(AdjustedBaseFlatHeight)])difference()
+                //Combine FlatTop and TaperedBottom
+                hull()
                     {
-                    scale([OvalXScale,1,1]) cylinder(h=BaseTaperHeight, d1=OuterDiameterTop, d2=OuterDiameterBot, $fn=CircleEdgeFaces);
+                    //FlatTop
+                    translate([0,0,0])scale([OvalXScale,1,1]) cylinder(h=AdjustedBaseFlatHeight, d=LengthDiameter, $fn=CircleEdgeFaces);
+                    //TaperedBottom
+                    translate([0,0,(AdjustedBaseFlatHeight)])difference()
+                        {
+                        scale([OvalXScale,1,1]) cylinder(h=BaseTaperHeight, d1=OuterDiameterTop, d2=OuterDiameterBot, $fn=CircleEdgeFaces);
+                        };
                     };
+                //Underside Carveout
+                hull()
+                    {
+                    translate([0,0,AdjustedBaseFlatHeight + BaseTaperHeight]) rotate([0,180,0])scale([OvalXScale,1,1]) cylinder(h=(AdjustedBaseFlatHeight + BaseTaperHeight - HollowThickness), d2=InnerDiameterTop, d1=InnerDiameterBot, $fn=CircleEdgeFacesHidden);
+                    translate([0,0,AdjustedBaseFlatHeight + BaseTaperHeight]) scale([OvalXScale,1,1]) cylinder(h=3, d=InnerDiameterBot, $fn=CircleEdgeFaces);
+                    }
                 };
-            //Underside Carveout
-            hull()
+            //Code for MagnetStuds
+            if (InLine3rdStud == "Yes") {translate([0,0,(HollowThickness)])PegStud();};//Center Stud if number of studs is odd
+            for (i = [0:(MagnetStudsMax - SubtractStud )])
                 {
-                translate([0,0,AdjustedBaseFlatHeight + BaseTaperHeight]) rotate([0,180,0])scale([OvalXScale,1,1]) cylinder(h=(AdjustedBaseFlatHeight + BaseTaperHeight - HollowThickness), d2=InnerDiameterTop, d1=InnerDiameterBot, $fn=CircleEdgeFacesHidden);
-                translate([0,0,AdjustedBaseFlatHeight + BaseTaperHeight]) scale([OvalXScale,1,1]) cylinder(h=3, d=InnerDiameterBot, $fn=CircleEdgeFaces);
+
+                translate([sin(360*i/(MagnetStuds - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStuds - SubtractStud))*MagnetStudYOffset), (HollowThickness) ])
+                rotate([0,0,-360*i/(MagnetStudsMax - SubtractStud)])
+                PegStud();
+                }
+
+            //Code for CrossBracing
+            //Y Bracing
+        if (IncludeYBracing == 1)
+                {
+                translate([0,0,HollowThickness])polyhedron( CubeYPoints, CubeFaces );
+                rotate(180,0,0)translate([0,0,HollowThickness])polyhedron( CubeYPoints, CubeFaces );
+                }
+            //X Bracing
+            if (IncludeXBracing == 1)
+                {
+                rotate(90,0,0)translate([0,0,HollowThickness])scale([1,1,1])polyhedron( CubeXPoints, CubeFaces );
+                rotate(270,0,0)translate([0,0,HollowThickness])scale([1,1,1])polyhedron( CubeXPoints, CubeFaces );
                 }
             };
-        //Code for MagnetStuds
-        if (InLine3rdStud == "Yes") {translate([0,0,(HollowThickness)])PegStud();};//Center Stud if number of studs is odd
-        for (i = [0:(MagnetStudsMax - SubtractStud )]) 
+        //Code for MagnetHoles
+        if (InLine3rdStud == "Yes") {translate([0,0,AdjustedBaseFlatHeight])PegHole();};//Center Stud if number of studs is odd
+        for (i = [0:(MagnetStudsMax - SubtractStud )])
             {
-
-            translate([sin(360*i/(MagnetStuds - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStuds - SubtractStud))*MagnetStudYOffset), (HollowThickness) ])
-            rotate([0,0,-360*i/(MagnetStudsMax - SubtractStud)])
-            PegStud();
+            translate([sin(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudYOffset), (AdjustedBaseFlatHeight) ])
+            rotate([0,0,360*i/(MagnetStudsMax - SubtractStud)])
+            PegHole();
+        if (MagnetMarkerAdd == 1)
+                {
+                if (MagnetMarkerMode == "Magnet")
+                    {
+                    translate([sin(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudYOffset), (0) ])
+            rotate([0,0,360*i/(MagnetStudsMax - SubtractStud)])
+                MagnetStudMarker();
+                    }
+                if (MagnetMarkerMode == "Both")
+                    {
+                    translate([sin(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudYOffset), (0) ])
+            rotate([0,0,360*i/(MagnetStudsMax - SubtractStud)])
+                MagnetStudMarker();
+                    }
+                };
             }
-
-        //Code for CrossBracing
-        //Y Bracing
-       if (IncludeYBracing == 1)
-            {       
-            translate([0,0,HollowThickness])polyhedron( CubeYPoints, CubeFaces );
-            rotate(180,0,0)translate([0,0,HollowThickness])polyhedron( CubeYPoints, CubeFaces );
+        if (MakeMultiBase == 1)
+            {
+            for (i = [1:(MultiBaseCount)])
+                {
+                    rotate([0,0,MultiBaseRotate])
+                    translate([sin((MultiBaseCrescent)*i/(MultiBaseCount))*MultiBaseXOffset, (cos((MultiBaseCrescent)*i/(MultiBaseCount))*MultiBaseYOffset), 0])
+                    rotate([0,0,-(MultiBaseCrescent)*i/(MultiBaseCount)])
+                    MultiBaseHole();
+                }
+            if (MultiBaseAddCenter == 1)
+                {
+                MultiBaseHole();
+                }
             }
-        //X Bracing
-        if (IncludeXBracing == 1)
-            {        
-            rotate(90,0,0)translate([0,0,HollowThickness])scale([1,1,1])polyhedron( CubeXPoints, CubeFaces );
-            rotate(270,0,0)translate([0,0,HollowThickness])scale([1,1,1])polyhedron( CubeXPoints, CubeFaces );
+        if (MagnetMarkerAdd == 1)
+            {
+        if (MagnetMarkerAdd == 1)
+            {
+            if (MagnetMarkerMode == "Center")MagnetStudMarker();
+            if (MagnetMarkerMode == "Both")  MagnetStudMarker();
+            }
             }
         };
-    //Code for MagnetHoles
-    if (InLine3rdStud == "Yes") {translate([0,0,AdjustedBaseFlatHeight])PegHole();};//Center Stud if number of studs is odd
-    for (i = [0:(MagnetStudsMax - SubtractStud )]) 
-        {
-        translate([sin(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudYOffset), (AdjustedBaseFlatHeight) ])
-        rotate([0,0,360*i/(MagnetStudsMax - SubtractStud)])
-        PegHole();
-    if (MagnetMarkerAdd == 1)
-            {
-            if (MagnetMarkerMode == "Magnet")
-                {  
-                translate([sin(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudYOffset), (0) ])
-        rotate([0,0,360*i/(MagnetStudsMax - SubtractStud)])
-            MagnetStudMarker();
-                }    
-            if (MagnetMarkerMode == "Both")
-                {  
-                translate([sin(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudXOffset, (cos(360*i/(MagnetStudsMax - SubtractStud))*MagnetStudYOffset), (0) ])
-        rotate([0,0,360*i/(MagnetStudsMax - SubtractStud)])
-            MagnetStudMarker();
-                }
-            };
-        }
-    if (MakeMultiBase == 1)
-        {
-        for (i = [1:(MultiBaseCount)])
-            {
-                rotate([0,0,MultiBaseRotate])
-                translate([sin((MultiBaseCrescent)*i/(MultiBaseCount))*MultiBaseXOffset, (cos((MultiBaseCrescent)*i/(MultiBaseCount))*MultiBaseYOffset), 0])
-                rotate([0,0,-(MultiBaseCrescent)*i/(MultiBaseCount)])
-                MultiBaseHole();
-            }
-         if (MultiBaseAddCenter == 1)
-            {
-            MultiBaseHole();
-            }
-        }
-    if (MagnetMarkerAdd == 1)
-        {
-    if (MagnetMarkerAdd == 1)
-        {
-        if (MagnetMarkerMode == "Center")MagnetStudMarker();
-        if (MagnetMarkerMode == "Both")  MagnetStudMarker();
-        }
-        }
-    }; 
-    
+};
